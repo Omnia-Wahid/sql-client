@@ -1,17 +1,17 @@
-package sql_client
+package main
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/Omnia-Wahid/sql-client.git/sqlclient"
 )
 
-const(
+const (
 	queryGetUser = "SELECT id,email from users where id=%d;"
 )
+
 var (
-	dbClient *sql.DB
+	dbClient sqlclient.SqlClient
 )
 
 type User struct {
@@ -21,31 +21,32 @@ type User struct {
 
 func init() {
 	var err error
-	dbClient, err = sql.Open("mysql", "this is the connection string")
+	dbClient, err = sqlclient.Open("mysql", "this is the connection string")
 	if err != nil {
 		panic(err)
 	}
 }
 
 func main() {
-	user,err:=GetUser(123)
-	if err!=nil{
+	user, err := GetUser(123)
+	if err != nil {
 		panic(err)
 	}
 	fmt.Print(user.Email)
 }
 
-func GetUser(id int64)(*User,error){
-	rows, err := dbClient.Query(fmt.Sprintf(queryGetUser,id))
+func GetUser(id int64) (*User, error) {
+	rows, err := dbClient.Query(fmt.Sprintf(queryGetUser, id))
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	var user User
-	for rows.Next() {
-		if err:= rows.Scan(&user.Id,&user.Email);err!=nil{
-			return nil,err
+	defer rows.Close()
+	for rows.HasNext() {
+		if err := rows.Scan(&user.Id, &user.Email); err != nil {
+			return nil, err
 		}
 		return &user, nil
 	}
-	return  nil, errors.New("User not found")
+	return nil, errors.New("User not found")
 }
